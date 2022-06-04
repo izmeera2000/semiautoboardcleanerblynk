@@ -4,14 +4,18 @@
 #define BLYNK_PRINT Serial
 #include <ESP8266_Lib.h>
 #include <BlynkSimpleShieldEsp8266.h>
+#include <Servo.h>
 
+Servo myservo;  // create servo object to control a servo
 
 char auth[] = BLYNK_AUTH_TOKEN ;
 int  pinValuex = 0;
 int  pinValuey = 0;
+int servoq = 0;
 char ssid[] = "OPPORTUNITY";
 char pass[] = "12345679";
-
+int pos = 0;    // variable to store the servo position
+int pos1 = 90;
 #define xstp 9
 #define xdir 8
 
@@ -19,50 +23,65 @@ char pass[] = "12345679";
 #define ydir 11
 int x;
 
-#include <SoftwareSerial.h>
-SoftwareSerial EspSerial(2, 3); // RX, TX
+// Hardware Serial on Mega, Leonardo, Micro...
+#define EspSerial Serial1
+
+// or Software Serial on Uno, Nano...
+//#include <SoftwareSerial.h>
+//SoftwareSerial EspSerial(2, 3); // RX, TX
 
 // Your ESP8266 baud rate:
 #define ESP8266_BAUD 9600
+
 ESP8266 wifi(&EspSerial);
 
-
-BLYNK_WRITE(V13)
+BLYNK_WRITE(V0)
 {
-  pinValuex = param.asInt();
+  servoq = param.asInt();
+  if (servoq == 1)
+  {
 
+    Serial.println(" 1 ");
+
+    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+
+      myservo.write(pos1);              // tell servo to go to position in variable 'pos'
+      pos1++;
+      delay(1);                       // waits 15 ms for the servo to reach the position
+
+    }
+  }
+  else
+  {
+    Serial.println(" 2 ");
+
+    for (pos = 90; pos >= 0; pos -= 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      myservo.write(pos1);              // tell servo to go to position in variable 'pos'
+      pos1--;
+
+      delay(1);                       // waits 15 ms for the servo to reach the position
+      //      Serial.println("ISAP KOTE");
+    }
+  }
 }
-BLYNK_WRITE(V14)
+
+
+
+BLYNK_WRITE(V1)
 {
-  pinValuey = param.asInt();
-
-}
-void setup()
-{
-  // Debug console
-  Serial.begin(115200);
-
-  // Set ESP8266 baud rate
-  EspSerial.begin(ESP8266_BAUD);
-  delay(1000);
-
-  Blynk.begin(auth, wifi, ssid, pass);
-
-  pinMode(xstp, OUTPUT);
-  pinMode(xdir, OUTPUT);
-  pinMode(ystp, OUTPUT);
-  pinMode(ydir, OUTPUT);
+  pinValuex = param[0].asInt();
+  pinValuey = param[1].asInt();
 
 
-}
+  Serial.print(pinValuex);
+  Serial.println("x");
 
-void loop()
-{
-  Blynk.run(); 
-  delay(200);
-  Blynk.syncVirtual(V13, V14);
+  Serial.print(pinValuey);
+  Serial.println("y");
 
-  if (pinValuex > 0 &&  pinValuey > 0)
+  if (pinValuex > 128 &&  pinValuey > 128)
   {
     digitalWrite(xdir, HIGH);
     digitalWrite(ydir, HIGH );
@@ -76,7 +95,7 @@ void loop()
       delay(1);
     }
   }
-  else if (pinValuex > 0 && pinValuey < 0) {
+  else if (pinValuex > 128 && pinValuey < 128) {
     digitalWrite(xdir, HIGH);
     digitalWrite(ydir, LOW);
     for (x = 0; x < 800; x++)
@@ -89,7 +108,7 @@ void loop()
       delay(1);
     }
   }
-  else if (pinValuex < 0 && pinValuey > 0) {
+  else if (pinValuex < 128 && pinValuey > 128) {
     digitalWrite(ydir, HIGH);
     digitalWrite(xdir, LOW);
     for (x = 0; x < 800; x++)
@@ -102,7 +121,7 @@ void loop()
       delay(1);
     }
   }
-  else if (pinValuex < 0 && pinValuey < 0) {
+  else if (pinValuex < 128 && pinValuey < 128) {
     digitalWrite(ydir, LOW);
     digitalWrite(xdir, LOW);
     for (x = 0; x < 800; x++)
@@ -116,7 +135,7 @@ void loop()
     }
 
   }
-  else if (pinValuex == 0 && pinValuey < 0) {
+  else if (pinValuex == 128 && pinValuey < 128) {
     digitalWrite(ydir, LOW);
     //    digitalWrite(xdir, LOW);
     for (x = 0; x < 800; x++)
@@ -130,7 +149,7 @@ void loop()
     }
 
   }
-  else if (pinValuex == 0 && pinValuey > 0) {
+  else if (pinValuex == 128 && pinValuey > 128) {
     digitalWrite(ydir, HIGH);
     //    digitalWrite(xdir, LOW);
     for (x = 0; x < 800; x++)
@@ -144,7 +163,7 @@ void loop()
     }
 
   }
-  else if (pinValuex > 0 && pinValuey == 0) {
+  else if (pinValuex > 128 && pinValuey == 128) {
     //    digitalWrite(ydir, HIGH);
     digitalWrite(xdir, HIGH);
     for (x = 0; x < 800; x++)
@@ -158,7 +177,7 @@ void loop()
     }
 
   }
-  else if (pinValuex < 0 && pinValuey == 0) {
+  else if (pinValuex < 128 && pinValuey == 128) {
     //    digitalWrite(ydir, HIGH);
     digitalWrite(xdir, LOW);
     for (x = 0; x < 800; x++)
@@ -181,6 +200,39 @@ void loop()
   }
   delay(100);
 
+
+
+}
+//BLYNK_WRITE(V14)
+//{
+//
+//}
+void setup()
+{
+  // Debug console
+  Serial.begin(115200);
+  myservo.attach(2);  // attaches the servo on pin 9 to the servo object
+
+  // Set ESP8266 baud rate
+  EspSerial.begin(ESP8266_BAUD);
+  delay(1000);
+
+  Blynk.begin(auth, wifi, ssid, pass);
+
+  pinMode(xstp, OUTPUT);
+  pinMode(xdir, OUTPUT);
+  pinMode(ystp, OUTPUT);
+  pinMode(ydir, OUTPUT);
+
+  Blynk.virtualWrite(V4, 1);
+  Blynk.virtualWrite(V0, 0);
+
+}
+
+void loop()
+{
+  Blynk.run();
+  //  Blynk.syncVirtual(V1);
 
 
 }
